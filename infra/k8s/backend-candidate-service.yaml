@@ -1,0 +1,24 @@
+# ==============================================================================
+# Backend Candidate Test Service (Isolated Pre-Promotion Validation)
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# Principle: Isolated endpoint for pre-promotion automated smoke tests
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-candidate-service
+  namespace: resqgrid
+  labels:
+    app: backend
+    role: candidate-testing
+    app.kubernetes.io/name: backend-candidate-service
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+    release: green # Automatically points to candidate color during blue-green release
+  ports:
+    - port: 4000
+      targetPort: 4000
+      protocol: TCP
+      name: http

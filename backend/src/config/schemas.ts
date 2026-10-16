@@ -12,7 +12,9 @@ export const envSchema = z.object({
   USGS_TIMEOUT_MS: z.coerce.number().default(5000),
   INGESTION_INTERVAL_MS: z.coerce.number().default(120000),
   ENABLE_INGESTION_CRON: z.coerce.boolean().default(true),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info')
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  RELEASE_COLOR: z.enum(['blue', 'green', 'initial']).default('blue'),
+  RELEASE_COMMIT: z.string().default('546cae7')
 });
 
 export const incidentTypeEnum = z.enum(['earthquake', 'flood', 'severe_weather', 'emergency']);

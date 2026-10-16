@@ -15,8 +15,11 @@ resources:
   - postgres-pvc.yaml
   - postgres-deployment.yaml
   - postgres-service.yaml
-  - backend-deployment.yaml
+  - backend-deployment-blue.yaml
+  - backend-deployment-green.yaml
   - backend-service.yaml
+  - backend-service-direct.yaml
+  - backend-candidate-service.yaml
   - backend-hpa.yaml
   - frontend-deployment.yaml
   - frontend-service.yaml

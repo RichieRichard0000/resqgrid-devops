@@ -1,0 +1,44 @@
+# ==============================================================================
+# Backend Direct Services (Direct Testing & Candidate Validation)
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# Principle: Route smoke test suites directly to specific release color
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service-blue
+  namespace: resqgrid
+  labels:
+    app: backend
+    release: blue
+    app.kubernetes.io/name: backend-service-blue
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+    release: blue
+  ports:
+    - port: 4000
+      targetPort: 4000
+      protocol: TCP
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service-green
+  namespace: resqgrid
+  labels:
+    app: backend
+    release: green
+    app.kubernetes.io/name: backend-service-green
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+    release: green
+  ports:
+    - port: 4000
+      targetPort: 4000
+      protocol: TCP
+      name: http

@@ -164,14 +164,44 @@ export class RealtimeManager {
       });
 
       this.listenerClient.on('error', (err) => {
-        logger.warn({ err: err.message }, 'PostgreSQL cluster pub/sub listener disconnected');
+        logger.warn({ err: err.message }, 'PostgreSQL cluster pub/sub listener error; scheduling reconnection...');
+        this.schedulePubSubReconnect();
+      });
+
+      this.listenerClient.on('end', () => {
+        logger.warn('PostgreSQL cluster pub/sub listener ended; scheduling reconnection...');
+        this.schedulePubSubReconnect();
       });
 
       logger.info({ instanceId: this.instanceId }, 'Subscribed to PostgreSQL cluster pub/sub channel: resqgrid_cluster_events');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      logger.warn({ err: msg }, 'PostgreSQL cluster listener could not be established');
+      logger.warn({ err: msg }, 'PostgreSQL cluster listener could not be established; scheduling reconnection...');
+      this.schedulePubSubReconnect();
     }
+  }
+
+  private isReconnecting = false;
+  private reconnectTimer: NodeJS.Timeout | null = null;
+
+  /**
+   * Schedules resilient reconnection with exponential backoff if DB connection drops
+   */
+  private schedulePubSubReconnect(delayMs = 3000): void {
+    if (this.isReconnecting || config.NODE_ENV === 'test') return;
+    this.isReconnecting = true;
+
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+
+    this.reconnectTimer = setTimeout(async () => {
+      this.isReconnecting = false;
+      logger.info('Attempting to re-establish PostgreSQL cluster pub/sub listener...');
+      if (this.listenerClient) {
+        try { await this.listenerClient.end(); } catch { /* ignore */ }
+        this.listenerClient = null;
+      }
+      await this.initDistributedPubSub();
+    }, delayMs);
   }
 
   /**

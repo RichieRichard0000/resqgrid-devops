@@ -7,13 +7,30 @@ describe('Observability Endpoints (/health, /metrics)', () => {
   const app = createApp();
 
   describe('GET /health/live', () => {
-    it('returns HTTP 200 with process liveness and uptime', async () => {
+    it('returns HTTP 200 with process liveness, release identity and uptime', async () => {
       const res = await request(app).get('/health/live');
 
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('ok');
+      expect(res.body.release).toBeDefined();
+      expect(res.body.release.color).toMatch(/blue|green|initial/);
+      expect(res.body.release.commit).toBeDefined();
+      expect(res.headers['x-release-color']).toMatch(/blue|green|initial/);
+      expect(res.headers['x-release-commit']).toBeDefined();
       expect(res.body.uptimeSeconds).toBeGreaterThanOrEqual(0);
       expect(res.body.timestamp).toBeDefined();
+    });
+  });
+
+  describe('GET /health/version', () => {
+    it('returns active release color and commit metadata', async () => {
+      const res = await request(app).get('/health/version');
+
+      expect(res.status).toBe(200);
+      expect(res.body.color).toMatch(/blue|green|initial/);
+      expect(res.body.commit).toBeDefined();
+      expect(res.body.environment).toBeDefined();
+      expect(res.headers['x-release-color']).toBe(res.body.color);
     });
   });
 

@@ -43,6 +43,28 @@ export function App() {
   // Authentication State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
+  // Active Blue-Green Release Environment State
+  const [releaseColor, setReleaseColor] = useState<'blue' | 'green'>('blue');
+
+  useEffect(() => {
+    const fetchRelease = async () => {
+      try {
+        const res = await fetch('/health/version');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.color === 'blue' || data.color === 'green') {
+            setReleaseColor(data.color);
+          }
+        }
+      } catch {
+        // Fallback default is blue
+      }
+    };
+    fetchRelease();
+    const interval = setInterval(fetchRelease, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Modals
   const [isSimulateOpen, setIsSimulateOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -149,10 +171,11 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
-      {/* Header */}
+      {/* Header with Active Blue-Green Indicator */}
       <Header
         connectionStatus={connectionStatus}
         currentUser={currentUser}
+        releaseColor={releaseColor}
         onOpenSimulate={() => setIsSimulateOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}

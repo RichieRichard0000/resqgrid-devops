@@ -37,6 +37,13 @@ export function createApp(): Express {
   // Request duration and Prometheus instrumentation
   app.use(requestLogger);
 
+  // Global release identity headers for blue-green routing verification
+  app.use((_req, res, next) => {
+    res.setHeader('X-Release-Color', config.RELEASE_COLOR);
+    res.setHeader('X-Release-Commit', config.RELEASE_COMMIT);
+    next();
+  });
+
   // Observability & System Routes
   app.use('/health', healthRouter);
   app.use('/metrics', metricsRouter);

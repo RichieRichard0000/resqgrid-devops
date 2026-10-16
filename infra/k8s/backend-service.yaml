@@ -19,6 +19,7 @@ spec:
   type: ClusterIP
   selector:
     app: backend
+    release: blue
   ports:
     - port: 4000
       targetPort: 4000

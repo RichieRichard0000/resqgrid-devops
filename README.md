@@ -1,16 +1,14 @@
 # ResQGrid — Real-Time Disaster Alert and Response Platform
 
-[![Build & Test Status](https://img.shields.io/badge/tests-81%20passed-brightgreen.svg)]()
+[![Build & Test Status](https://img.shields.io/badge/tests-84%20passed-brightgreen.svg)]()
 [![Backend](https://img.shields.io/badge/backend-Express%20%7C%20PostGIS%20%7C%20Socket.IO-blue.svg)]()
 [![Frontend](https://img.shields.io/badge/frontend-React%20%7C%20Vite%20%7C%20Leaflet-cyan.svg)]()
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg)]()
 
 > **Final-Year B.Tech CSE Project**  
 > **Institution:** SRM Institute of Science and Technology, Kattankulathur  
-> **Final-Year B.Tech CSE Project**  
-> **Institution:** SRM Institute of Science and Technology, Kattankulathur  
 > **Evaluation Focus:** DevOps, Cloud Infrastructure, CI/CD, Containerization, Monitoring & Observability, Autoscaling, Blue-Green Deployment  
-> **Milestones:** Phase 1 (Application Foundation) & Phase 2 (Cloud Infrastructure, CI/CD, Kubernetes, Autoscaling & Monitoring) — **COMPLETED**  
+> **Milestones:** Phase 1, Phase 2, & Phase 3 (Blue-Green Releases & Rollback) — **100% COMPLETED**  
 
 ---
 
@@ -170,9 +168,18 @@ k6 run --env TARGET_URL=http://localhost:4000 infra/load-tests/stress-spike.js
 - [Monitoring & Alerting Guide](docs/monitoring.md) — Prometheus scrape configuration, alert rules, and 8 real PromQL Grafana panels.
 - [Autoscaling & Load Testing](docs/autoscaling.md) — HPA mathematical model, 4 k6 load test scenarios, and error diagnosis matrix.
 
+### Release Reliability & Disaster Recovery (Phase 3)
+- [Blue-Green Deployment Guide](docs/blue-green-deployment.md) — Dual environment architecture, candidate pre-promotion validation, and traffic switching.
+- [Emergency Rollback Runbook](docs/rollback-runbook.md) — Instant 177ms rollback engine, Scenario A/B handling, and expand-and-contract database rules.
+- [5–8 Minute Live Demo Script](docs/demo-runbook.md) — Step-by-step examination presentation sequence and evaluation checklist.
+- [System Performance Evaluation](docs/performance-evaluation.md) — Verified 2,026 req/s benchmarks, latency quantiles, and HPA transitions.
+- [Failure Scenarios & Security Drills](docs/failure-scenarios.md) — 6 controlled failure drills verifying unit test, SonarQube, OWASP, and Trivy blocking.
+- [Final Technical Architecture](docs/final-architecture.md) — 4 comprehensive Mermaid diagrams covering end-to-end delivery, scaling, and failure workflows.
+
 ### Audit & Completion Reports
-- [Phase 2 Completion Report](docs/phase-2-completion.md) — Complete audit verification matrix, tool logs, known limitations, and Phase 3 roadmap.
-- [Phase 1 Completion Report](docs/phase-1-completion.md) — Phase 1 application foundation delivery record.
+- [Phase 3 Completion Report](docs/phase-3-completion.md) — Master PASS/FAIL verification matrix, deployment evidence, and cleanup guide.
+- [Phase 2 Completion Report](docs/phase-2-completion.md) — Phase 2 Cloud Infrastructure & CI/CD delivery record.
+- [Phase 1 Completion Report](docs/phase-1-completion.md) — Phase 1 Application Foundation delivery record.
 - [API Reference](docs/api.md) — REST API endpoints and Socket.IO real-time events.
 - [Testing Guide](docs/testing.md) — Unit and integration test suites.
 

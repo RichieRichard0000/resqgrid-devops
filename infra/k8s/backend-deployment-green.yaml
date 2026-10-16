@@ -1,0 +1,109 @@
+# ==============================================================================
+# Backend GREEN Deployment (Candidate Release for Blue-Green Workflow)
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# Principle: Distinct Kubernetes Deployment for Blue-Green Isolation
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-green
+  namespace: resqgrid
+  labels:
+    app: backend
+    release: green
+    app.kubernetes.io/name: backend-green
+    app.kubernetes.io/part-of: resqgrid-platform
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: backend
+      release: green
+  template:
+    metadata:
+      labels:
+        app: backend
+        release: green
+        app.kubernetes.io/name: backend-green
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4000"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: backend
+          image: resqgrid-backend:candidate-green
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 4000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: resqgrid-config
+          env:
+            - name: RELEASE_COLOR
+              value: "green"
+            - name: RELEASE_COMMIT
+              value: "candidate-green"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: resqgrid-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: resqgrid-secrets
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: resqgrid-secrets
+                  key: JWT_SECRET
+            - name: HOST
+              value: "0.0.0.0"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 4000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}

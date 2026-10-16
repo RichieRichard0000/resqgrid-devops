@@ -6,6 +6,7 @@ import { User } from '../types/index.js';
 interface HeaderProps {
   connectionStatus: SocketConnectionStatus;
   currentUser: User | null;
+  releaseColor?: 'blue' | 'green';
   onOpenSimulate: () => void;
   onOpenAuth: () => void;
   onLogout: () => void;
@@ -14,6 +15,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   connectionStatus,
   currentUser,
+  releaseColor = 'blue',
   onOpenSimulate,
   onOpenAuth,
   onLogout
@@ -43,6 +45,24 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Real-time status indicator & Controls */}
         <div className="flex items-center gap-2.5 flex-wrap justify-end">
+          {/* Active Release Badge for Blue-Green Evaluation */}
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border tracking-wider uppercase transition-all shadow-sm ${
+              releaseColor === 'green'
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-emerald-950/40'
+                : 'bg-blue-500/20 text-blue-400 border-blue-500/40 shadow-blue-950/40'
+            }`}
+            data-testid="release-color-badge"
+            title={`Active Kubernetes Release Environment: ${releaseColor.toUpperCase()}`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                releaseColor === 'green' ? 'bg-emerald-400 animate-pulse' : 'bg-blue-400'
+              }`}
+            ></span>
+            <span>Release: {releaseColor}</span>
+          </div>
+
           {/* Connection Pill */}
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
