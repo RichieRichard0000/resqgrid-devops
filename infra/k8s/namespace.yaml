@@ -1,0 +1,12 @@
+# ==============================================================================
+# Kubernetes Namespace Definition
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# ==============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: resqgrid
+  labels:
+    app.kubernetes.io/name: resqgrid
+    app.kubernetes.io/part-of: resqgrid-platform
+    environment: staging

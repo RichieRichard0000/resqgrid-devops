@@ -1,0 +1,23 @@
+# ==============================================================================
+# Kubernetes ConfigMap for ResQGrid
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# ==============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: resqgrid-config
+  namespace: resqgrid
+  labels:
+    app.kubernetes.io/name: resqgrid
+    app.kubernetes.io/part-of: resqgrid-platform
+data:
+  NODE_ENV: "production"
+  PORT: "4000"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "resqgrid"
+  CORS_ORIGIN: "*"
+  LOG_LEVEL: "info"
+  METRICS_ENABLED: "true"
+  GEO_SIMULATED_ENABLED: "true"
+  USGS_FEED_ENABLED: "true"

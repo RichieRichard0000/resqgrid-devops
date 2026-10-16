@@ -1,0 +1,68 @@
+# ==============================================================================
+# Prometheus Alerting Rules
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# ==============================================================================
+groups:
+  - name: resqgrid_alerts
+    rules:
+      # Alert when the backend service is unreachable
+      - alert: ResQGridBackendDown
+        expr: up{job="resqgrid-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          project: resqgrid
+        annotations:
+          summary: "ResQGrid Backend Instance is Down"
+          description: "Instance {{ $labels.instance }} has been unreachable for more than 1 minute."
+
+      # Alert when 5xx HTTP error rate exceeds 5% of total requests
+      - alert: ResQGridHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status_code=~"5.."}[2m]))
+            /
+            sum(rate(http_requests_total[2m]))
+          ) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+          project: resqgrid
+        annotations:
+          summary: "High HTTP 5xx Error Rate"
+          description: "5xx HTTP error rate is {{ $value | printf \"%.2f\" }}% over the last 2 minutes."
+
+      # Alert when 95th percentile request latency exceeds 1.5 seconds
+      - alert: ResQGridHighRequestLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[2m])) by (le)) > 1.5
+        for: 2m
+        labels:
+          severity: warning
+          project: resqgrid
+        annotations:
+          summary: "Elevated 95th Percentile Latency"
+          description: "p95 request latency is {{ $value | printf \"%.2f\" }}s (threshold: 1.5s)."
+
+      # Alert when Node.js event loop lag exceeds 200 milliseconds (indicates CPU saturation or synchronous blocking)
+      - alert: ResQGridEventLoopBlocked
+        expr: nodejs_eventloop_lag_seconds > 0.2
+        for: 1m
+        labels:
+          severity: warning
+          project: resqgrid
+        annotations:
+          summary: "Node.js Event Loop Lag Detected"
+          description: "Event loop lag on {{ $labels.instance }} is {{ $value | printf \"%.3f\" }}s, indicating synchronous CPU blocking."
+
+      # Alert when Node.js heap memory consumption exceeds 85% of total allocated heap
+      - alert: ResQGridHighMemoryUsage
+        expr: |
+          (nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes) * 100 > 85
+        for: 3m
+        labels:
+          severity: warning
+          project: resqgrid
+        annotations:
+          summary: "High Heap Memory Consumption"
+          description: "Node.js heap memory utilization is {{ $value | printf \"%.1f\" }}% (potential memory leak)."

@@ -1,0 +1,22 @@
+# ==============================================================================
+# Frontend ClusterIP Service
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: resqgrid
+  labels:
+    app: frontend
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/part-of: resqgrid-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http

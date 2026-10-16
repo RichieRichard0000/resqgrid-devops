@@ -1,0 +1,26 @@
+# ==============================================================================
+# Backend ClusterIP Service
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: resqgrid
+  labels:
+    app: backend
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: resqgrid-platform
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "4000"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+  ports:
+    - port: 4000
+      targetPort: 4000
+      protocol: TCP
+      name: http

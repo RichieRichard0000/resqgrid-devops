@@ -1,0 +1,26 @@
+# ResQGrid CODEOWNERS
+# SRM Institute of Science and Technology - CSE Final Year Project
+# Team Members:
+# Member 1: DevOps & Backend Lead (@devops-lead)
+# Member 2: Cloud Infrastructure & Frontend Lead (@cloud-frontend-lead)
+
+# Global fallback: Both team members must approve changes to root files
+* @devops-lead @cloud-frontend-lead
+
+# Backend Architecture, DB Migrations & Socket Engine
+/backend/ @devops-lead
+/database/ @devops-lead
+
+# Frontend Application, Leaflet & UI Components
+/frontend/ @cloud-frontend-lead
+
+# Cloud Infrastructure, Terraform & Kubernetes
+/infra/terraform/ @devops-lead @cloud-frontend-lead
+/infra/k8s/ @devops-lead @cloud-frontend-lead
+/infra/monitoring/ @devops-lead
+/infra/load-tests/ @devops-lead @cloud-frontend-lead
+
+# CI/CD Pipeline & Security Policies
+Jenkinsfile @devops-lead
+/.github/ @devops-lead @cloud-frontend-lead
+/docs/ @devops-lead @cloud-frontend-lead

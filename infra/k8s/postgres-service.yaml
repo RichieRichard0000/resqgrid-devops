@@ -1,0 +1,21 @@
+# ==============================================================================
+# PostGIS ClusterIP Service
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# ==============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: resqgrid
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: resqgrid-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres

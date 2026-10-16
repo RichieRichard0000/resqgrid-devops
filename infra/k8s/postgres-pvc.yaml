@@ -1,0 +1,21 @@
+# ==============================================================================
+# PersistentVolumeClaim for PostGIS Database
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# ==============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-pvc
+  namespace: resqgrid
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: resqgrid-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # In k3s, local-path is the built-in default provisioner.
+  # On AWS EBS CSI driver, gp3 or gp2 can be substituted.
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi

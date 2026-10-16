@@ -1,0 +1,28 @@
+# ==============================================================================
+# Kustomization Manifest
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# Deploy full cluster with: kubectl apply -k infra/k8s/
+# ==============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: resqgrid
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - postgres-pvc.yaml
+  - postgres-deployment.yaml
+  - postgres-service.yaml
+  - backend-deployment.yaml
+  - backend-service.yaml
+  - backend-hpa.yaml
+  - frontend-deployment.yaml
+  - frontend-service.yaml
+  - ingress.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: resqgrid-platform
+      institution: srmist-cse

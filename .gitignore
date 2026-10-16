@@ -24,9 +24,11 @@ pnpm-debug.log*
 lerna-debug.log*
 *.log
 
-# Coverage directory used by testing tools
+# Coverage directory and test reports
 coverage/
 *.lcov
+junit.xml
+test-results*.xml
 
 # Persistent storage
 postgres_data/
@@ -38,3 +40,20 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# SonarQube & Security Scanners
+.scannerwork/
+trivy-results*.json
+dependency-check-report.*
+

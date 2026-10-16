@@ -7,127 +7,144 @@
 
 > **Final-Year B.Tech CSE Project**  
 > **Institution:** SRM Institute of Science and Technology, Kattankulathur  
+> **Final-Year B.Tech CSE Project**  
+> **Institution:** SRM Institute of Science and Technology, Kattankulathur  
 > **Evaluation Focus:** DevOps, Cloud Infrastructure, CI/CD, Containerization, Monitoring & Observability, Autoscaling, Blue-Green Deployment  
-> **Milestone:** Phase 1 — Application Foundation  
+> **Milestones:** Phase 1 (Application Foundation) & Phase 2 (Cloud Infrastructure, CI/CD, Kubernetes, Autoscaling & Monitoring) — **COMPLETED**  
 
 ---
 
 ## 1. Project Overview
 
-**ResQGrid** is a real-time, geofenced disaster alerting and incident response platform designed to bridge the gap between regional emergency detection and localized warning delivery.
+**ResQGrid** is an event-driven, real-time geofenced disaster alerting and incident response platform designed to bridge the gap between regional emergency detection and localized warning delivery.
 
 During civil emergencies (floods, earthquakes, severe storms, hazmat incidents), every second matters. ResQGrid combines native spatial geometry indexing (**PostgreSQL + PostGIS**) and bi-directional real-time communication (**Socket.IO**) to compute which connected citizens and emergency responders fall within a hazard's notification perimeter.
 
-### Key Capabilities in Phase 1:
+### Key Capabilities in Phase 1 & Phase 2:
 - **Interactive Geospatial Dashboard:** OpenStreetMap with Leaflet showing dynamic incident clusters, severity codes, and personal user location.
 - **Privacy-Preserving Geofencing:** Client GPS location is only requested upon explicit user opt-in, stays in the client session, and is never broadcast to other users.
 - **Provider Abstraction Architecture:** Ingests live USGS earthquake feeds, severe weather observations, and offline simulated drill scenarios with strict visual labeling.
 - **Live WebSocket Alert Delivery:** Server-side spatial filtering broadcasts high-priority emergency banners to clients within the impact zone without page refresh.
-- **Role-Based Incident Response:** Secure JWT authentication with role authorization (`admin`, `responder`, `viewer`) for incident reporting and status management.
-- **DevOps & Observability Ready:** Built-in `/health/live`, `/health/ready`, and Prometheus `/metrics` instrumentation.
+- **Multi-Replica WebSocket Bus:** Implemented zero-dependency horizontal WebSocket broadcasting using native PostgreSQL `LISTEN/NOTIFY` pub/sub across Kubernetes pods.
+- **Jenkins CI/CD Automation:** 11-stage declarative pipeline with GitHub webhook integration, SonarQube quality gates, OWASP Dependency-Check (CVSS ≥ 7.0 hard fail), and Aqua Trivy container scanning.
+- **Cost-Optimized Terraform IaC:** AWS VPC, public/private subnets, least-privilege IAM roles, and EC2 k3s host in `ap-south-1` ($36.92/mo, avoiding $32.40/mo NAT Gateway).
+- **Kubernetes (k3s) Orchestration & Autoscaling:** Kustomize-bundled manifests with non-root security contexts (UID 10001) and HPA scaling from 2 to 6 backend replicas based on CPU (60%) and Memory (70%).
+- **Prometheus & Grafana Observability:** Scrapes `/metrics` every 15s; 8 real PromQL panels tracking throughput, latency quantiles (p50/p95/p99), error rates, and event-loop lag.
+- **k6 Load Testing Suite:** Controlled scenarios for baseline (10 VUs), ramp-up (60 VUs), stress-spike HPA trigger (180 VUs), and recovery observation.
 
 ---
 
 ## 2. Technology Stack
 
-| Layer | Technologies |
-|---|---|
-| **Frontend** | React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons |
-| **Mapping Engine** | Leaflet with OpenStreetMap cartography |
-| **Backend API** | Node.js (ESM), Express, TypeScript, Zod, Pino |
-| **Real-Time Engine** | Socket.IO (WebSockets with polling fallback) |
-| **Spatial Database** | PostgreSQL 16 + PostGIS 3.4 (WGS 84 / SRID 4326) |
-| **Testing** | Vitest, Supertest, React Testing Library, jsdom |
-| **Containerization** | Docker (Multi-stage non-root) and Docker Compose |
+| Layer / Role | Technologies | Version |
+|---|---|---|
+| **Frontend UI** | React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons | v18 / v6 |
+| **Mapping Engine** | Leaflet with OpenStreetMap cartography | v1.9 |
+| **Backend API** | Node.js (ESM), Express, TypeScript, Zod, Pino | Node 20+ / TS 5 |
+| **Real-Time Engine** | Socket.IO (WebSockets with polling fallback) + Postgres LISTEN/NOTIFY | v4.8 |
+| **Spatial Database** | PostgreSQL 16 + PostGIS 3.4 (WGS 84 / SRID 4326) | 16-3.4 |
+| **Testing** | Vitest, Supertest, React Testing Library, jsdom | Vitest 2.1 |
+| **Containerization** | Docker (Multi-stage non-root) and Docker Compose | Docker 25+ |
+| **CI/CD Orchestration** | Jenkins Declarative Pipeline | 2.440+ LTS |
+| **Code Quality & SCA** | SonarQube Scanner & OWASP Dependency-Check | Sonar 5 / OWASP 9 |
+| **Container Security** | Aqua Trivy Vulnerability Scanner | Trivy 0.50+ |
+| **Infrastructure as Code** | HashiCorp Terraform | Terraform 1.16+ |
+| **Cloud Provider** | Amazon Web Services (AWS) — ap-south-1 (Mumbai) | AWS Cloud |
+| **Kubernetes Engine** | Rancher k3s (Lightweight Kubernetes on EC2) | k3s v1.28+ |
+| **Autoscaling** | Kubernetes HPA (`autoscaling/v2`) + Metrics-Server | K8s Native |
+| **Observability** | Prometheus & Grafana (8 Real PromQL Dashboard Panels) | Prom 2.50 / Graf 10.3 |
+| **Load Testing** | Grafana k6 Load Testing Engine | k6 v2.2+ |
 
 ---
 
 ## 3. High-Level Architecture
 
 ```mermaid
-flowchart LR
-    Browser["React 18 + Leaflet\n(Port 3000)"] <-->|Socket.IO & REST| Nginx["Nginx Reverse Proxy\n(Port 80)"]
-    Nginx <-->|Proxy| NodeAPI["Express + Socket.IO API\n(Port 4000)"]
-    NodeAPI <-->|SQL / PostGIS GiST| PostGIS["PostgreSQL 16 + PostGIS 3.4\n(Port 5432)"]
-    NodeAPI <-->|GeoJSON Polling| USGS["USGS Earthquake Feed"]
-    NodeAPI <-->|Offline Engine| SimDrill["Simulated Provider"]
+flowchart TD
+    subgraph DevZone["1. Collaborative Development"]
+        DEV["DevOps Team (2 Members)"] -->|Git Push / PR| GITHUB["GitHub Repository"]
+    end
+
+    subgraph CIZone["2. Jenkins CI/CD & Security Gates"]
+        GITHUB -->|Webhook| JENKINS["Jenkins Declarative Pipeline"]
+        JENKINS --> SONAR["SonarQube Quality Gate"]
+        JENKINS --> OWASP["OWASP Dependency-Check (CVSS >= 7.0)"]
+        JENKINS --> TRIVY["Trivy Vulnerability Scan"]
+        JENKINS --> ECR["Amazon ECR (Git-SHA Tags)"]
+    end
+
+    subgraph AWSZone["3. AWS Infrastructure (Terraform Managed)"]
+        VPC["AWS VPC (10.0.0.0/16) - ap-south-1"]
+        EC2["EC2 t3.medium Host (Ubuntu 22.04 LTS)"]
+        VPC --- EC2
+        ECR -.->|Pull Images| EC2
+    end
+
+    subgraph K8sZone["4. Kubernetes Runtime (k3s)"]
+        INGRESS["Traefik Ingress Controller"]
+        FE["Frontend Pods (2 Replicas)"]
+        BE["Backend Pods (2-6 Replicas via HPA)"]
+        DB["PostGIS 16-3.4 Database (10Gi PVC)"]
+        INGRESS --> FE & BE
+        BE <-->|LISTEN/NOTIFY Pub/Sub| DB
+    end
+
+    subgraph ObsZone["5. Monitoring & Load Testing"]
+        PROM["Prometheus (Scrapes /metrics)"]
+        GRAFANA["Grafana (8 Custom Panels)"]
+        K6["k6 Load Test Suite"]
+        BE -.-> PROM --> GRAFANA
+        K6 -->|Load Spikes| INGRESS
+    end
+
+    EC2 --- K8sZone
 ```
 
 ---
 
-## 4. Quick Start Guide
+## 4. Quick Start & Verification
 
-### Prerequisites
-- **Node.js**: v20 or v22 LTS (`node -v`)
-- **npm**: v10+ (`npm -v`)
-- **Docker & Docker Compose** (for containerized database/application)
-- **Git**
-
-### Installation
-
-1. **Clone repository and configure environment:**
-   ```bash
-   git clone <repo_url>
-   cd Devops_project
-   cp .env.example .env
-   ```
-
-2. **Install all dependencies across monorepo workspaces:**
-   ```bash
-   npm install
-   ```
-
-3. **Start PostgreSQL with PostGIS:**
-   - Option A (Docker):
-     ```bash
-     docker compose up -d db
-     ```
-   - Option B (Local PostgreSQL): Ensure PostGIS extension is installed and update credentials in `.env`.
-
-4. **Run Database Migrations and Seed Data:**
-   ```bash
-   npm --workspace=backend run migrate
-   npm --workspace=backend run seed
-   ```
-
-5. **Start Development Servers:**
-   ```bash
-   # Terminal 1: Backend API & WebSocket Server (Port 4000)
-   npm run dev:backend
-
-   # Terminal 2: Frontend Dashboard (Port 3000)
-   npm run dev:frontend
-   ```
-
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## 5. Running with Docker Compose (Production Setup)
-
-ResQGrid provides a production-grade multi-stage container configuration:
-
+### Run Automated Tests & Checks
 ```bash
-# Build and run the entire stack (PostGIS + Backend + Frontend/Nginx)
-docker compose up --build -d
+# Run all 81 automated tests (59 backend + 22 frontend)
+npm run test
 
-# Verify container health
-docker compose ps
+# Run strict TypeScript linting across all workspaces
+npm run lint
 
-# View live application logs
-docker compose logs -f
+# Compile production builds
+npm run build
 ```
 
-Access Points:
-- **Frontend Dashboard:** [http://localhost:3000](http://localhost:3000)
-- **Backend API:** [http://localhost:4000](http://localhost:4000)
-- **Liveness Probe:** [http://localhost:4000/health/live](http://localhost:4000/health/live)
-- **Readiness Probe:** [http://localhost:4000/health/ready](http://localhost:4000/health/ready)
-- **Prometheus Metrics:** [http://localhost:4000/metrics](http://localhost:4000/metrics)
+### Validate Infrastructure as Code (Terraform)
+```bash
+cd infra/terraform
+terraform init -backend=false
+terraform validate
+```
+
+### Validate Kubernetes Manifests (Kustomize)
+```bash
+kubectl kustomize infra/k8s
+```
+
+### Run Trivy Security Scan
+```bash
+trivy fs --severity HIGH,CRITICAL .
+```
+
+### Run k6 Load Testing Scenarios
+```bash
+# Baseline load test
+k6 run --env TARGET_URL=http://localhost:4000 infra/load-tests/baseline-load.js
+
+# Stress spike test (HPA Trigger)
+k6 run --env TARGET_URL=http://localhost:4000 infra/load-tests/stress-spike.js
+```
 
 ---
 
-## 6. Pre-configured Evaluation Credentials
+## 5. Pre-configured Evaluation Credentials
 
 | Role | Email | Password | Permissions |
 |---|---|---|---|
@@ -137,43 +154,25 @@ Access Points:
 
 ---
 
-## 7. Automated Testing & Quality Checks
+## 6. Comprehensive Project Documentation
 
-Run the automated test suite verifying spatial matching, validation, providers, REST endpoints, and UI components:
+### Architecture & Infrastructure
+- [DevOps & Cloud Architecture](docs/devops-architecture.md) — Master DevOps architecture, component responsibilities, and end-to-end Mermaid diagram.
+- [AWS Infrastructure & Terraform](docs/aws-infrastructure.md) — VPC topology, subnets, EC2, IAM, ECR, and NAT omission cost rationale.
+- [Kubernetes (k3s) Deployment](docs/kubernetes-deployment.md) — Cluster architecture, Kustomize manifests, resource requests/limits, and operations.
+- [Cost Estimation & Budget Management](docs/cost-management.md) — Itemized monthly AWS cost calculation ($36.92/mo) and EKS comparison.
 
-```bash
-# Run all 81 tests across all workspaces
-npm run test
+### CI/CD & Security
+- [CI/CD Pipeline Guide](docs/ci-cd-pipeline.md) — 11-stage Jenkins pipeline, GitHub webhook integration, and promotion criteria.
+- [Security & Vulnerability Management](docs/security-policy.md) — SonarQube quality gate, OWASP thresholds, Trivy rules, and container hardening.
 
-# Run backend tests only (59 tests)
-npm run test:backend
+### Observability & Performance
+- [Monitoring & Alerting Guide](docs/monitoring.md) — Prometheus scrape configuration, alert rules, and 8 real PromQL Grafana panels.
+- [Autoscaling & Load Testing](docs/autoscaling.md) — HPA mathematical model, 4 k6 load test scenarios, and error diagnosis matrix.
 
-# Run frontend tests only (22 tests)
-npm run test:frontend
+### Audit & Completion Reports
+- [Phase 2 Completion Report](docs/phase-2-completion.md) — Complete audit verification matrix, tool logs, known limitations, and Phase 3 roadmap.
+- [Phase 1 Completion Report](docs/phase-1-completion.md) — Phase 1 application foundation delivery record.
+- [API Reference](docs/api.md) — REST API endpoints and Socket.IO real-time events.
+- [Testing Guide](docs/testing.md) — Unit and integration test suites.
 
-# Run TypeScript typechecks
-npm run lint
-
-# Compile production builds
-npm run build
-```
-
----
-
-## 8. Troubleshooting
-
-| Issue | Cause | Solution |
-|---|---|---|
-| `Connection refused: postgres:5432` | Database container is not running | Run `docker compose up -d db` and wait for healthcheck to pass |
-| `PostGIS extension not found` | Standard Postgres image used without PostGIS | Ensure image is `postgis/postgis:16-3.4-alpine` |
-| `Location permission denied` | Browser blocked geolocation access | Click padlock icon in browser address bar, allow Location, and click "Enable My Location" |
-| `Socket offline / disconnected` | Backend is not reachable | Ensure backend is listening on port 4000 and `VITE_SOCKET_URL` is set |
-
----
-
-## 9. Documentation Directory
-
-- [Architecture & Data Flow](docs/architecture.md) — Architectural diagrams, components, and data flow.
-- [API Reference](docs/api.md) — Comprehensive REST API endpoints and Socket.IO events.
-- [Testing Guide](docs/testing.md) — Test suites, coverage, and execution instructions.
-- [Phase 1 Completion Report](docs/phase-1-completion.md) — Feature checklist, verification log, and roadmap to Phase 2.
