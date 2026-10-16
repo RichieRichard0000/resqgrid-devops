@@ -1,0 +1,91 @@
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL 16 with PostGIS 3.4 Spatial Engine
+  # ----------------------------------------------------------------------------
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: resqgrid_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-resqgrid_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-resqgrid_password}
+      POSTGRES_DB: ${POSTGRES_DB:-resqgrid}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-resqgrid_user} -d ${POSTGRES_DB:-resqgrid}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - resqgrid-net
+
+  # ----------------------------------------------------------------------------
+  # ResQGrid Backend API & Socket.IO Engine
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ..
+      dockerfile: infra/docker/backend.Dockerfile
+    container_name: resqgrid_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://${POSTGRES_USER:-resqgrid_user}:${POSTGRES_PASSWORD:-resqgrid_password}@db:5432/${POSTGRES_DB:-resqgrid}
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-resqgrid-cse-srm-2026}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      CORS_ORIGIN: http://localhost:3000,http://localhost:80,http://localhost:5173
+      USGS_FEED_URL: ${USGS_FEED_URL:-https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson}
+      USGS_TIMEOUT_MS: ${USGS_TIMEOUT_MS:-5000}
+      INGESTION_INTERVAL_MS: ${INGESTION_INTERVAL_MS:-120000}
+      ENABLE_INGESTION_CRON: ${ENABLE_INGESTION_CRON:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${PORT:-4000}:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - resqgrid-net
+
+  # ----------------------------------------------------------------------------
+  # ResQGrid Frontend (React + Vite + Tailwind + Leaflet served by Nginx)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ..
+      dockerfile: infra/docker/frontend.Dockerfile
+    container_name: resqgrid_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - resqgrid-net
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  resqgrid-net:
+    driver: bridge

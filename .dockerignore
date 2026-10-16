@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+coverage
+*.log
+.git
+.env
+.env.local
+postgres_data
+.vscode
+.idea

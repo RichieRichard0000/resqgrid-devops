@@ -1,0 +1,30 @@
+{
+  "name": "resqgrid",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ResQGrid - Real-Time Disaster Alert and Response Platform (Phase 1)",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm --workspace=backend run dev",
+    "dev:frontend": "npm --workspace=frontend run dev",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "test:backend": "npm --workspace=backend run test",
+    "test:frontend": "npm --workspace=frontend run test",
+    "lint": "npm run lint --workspaces"
+  },
+  "keywords": [
+    "disaster-response",
+    "postgis",
+    "socketio",
+    "react",
+    "leaflet",
+    "express",
+    "devops"
+  ],
+  "author": "SRM CSE Final Year Project Team",
+  "license": "UNLICENSED"
+}
