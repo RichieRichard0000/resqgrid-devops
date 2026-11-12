@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: resqgrid
+  labels:
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: resqgrid-platform
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 30s
+
+    route:
+      group_by: ['alertname', 'severity', 'project']
+      group_wait: 2s
+      group_interval: 5s
+      repeat_interval: 30m
+      receiver: 'local-in-cluster'
+
+    receivers:
+      - name: 'local-in-cluster'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: resqgrid
+  labels:
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: resqgrid-platform
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9093
+      targetPort: 9093
+      protocol: TCP
+      name: http
+  selector:
+    app: alertmanager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager-deployment
+  namespace: resqgrid
+  labels:
+    app: alertmanager
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: resqgrid-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+        app.kubernetes.io/name: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
+            - "--storage.path=/alertmanager"
+            - "--cluster.listen-address=" # Standalone local cluster mode (disable mesh)
+          ports:
+            - containerPort: 9093
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/alertmanager
+            - name: storage-volume
+              mountPath: /alertmanager
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9093
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9093
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config-volume
+          configMap:
+            name: alertmanager-config
+        - name: storage-volume
+          emptyDir: {}

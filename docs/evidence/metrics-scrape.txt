@@ -1,0 +1,28 @@
+# ==============================================================================
+# Prometheus Live Metrics Scrape Evidence
+# Captured Immediately Post k6 Benchmark (23,921 Requests Processed)
+# Timestamp: 2026-10-17T01:45:56+05:30
+# Endpoint: http://localhost:4000/metrics
+# ==============================================================================
+
+# HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
+# TYPE process_cpu_user_seconds_total counter
+process_cpu_user_seconds_total{app="resqgrid-backend"} 1.484
+
+# HELP process_cpu_system_seconds_total Total system CPU time spent in seconds.
+# TYPE process_cpu_system_seconds_total counter
+process_cpu_system_seconds_total{app="resqgrid-backend"} 0.296
+
+# HELP nodejs_heap_size_used_bytes Process heap size used from Node.js in bytes.
+# TYPE nodejs_heap_size_used_bytes gauge
+nodejs_heap_size_used_bytes{app="resqgrid-backend"} 22451808
+
+# HELP http_requests_total Total count of HTTP requests processed
+# TYPE http_requests_total counter
+http_requests_total{method="GET",route="/health/version",status_code="200",app="resqgrid-backend"} 1
+http_requests_total{method="GET",route="/nearby",status_code="500",app="resqgrid-backend"} 1
+http_requests_total{method="GET",route="/health/live",status_code="200",app="resqgrid-backend"} 23921
+
+# HELP active_socket_connections Number of currently active real-time client WebSocket connections
+# TYPE active_socket_connections gauge
+active_socket_connections{app="resqgrid-backend"} 0

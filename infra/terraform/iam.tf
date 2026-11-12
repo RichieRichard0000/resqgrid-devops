@@ -27,24 +27,30 @@ resource "aws_iam_role" "k3s_node_role" {
   }
 }
 
-# Least-privilege policy document for reading Docker images from Amazon ECR
-data "aws_iam_policy_document" "ecr_read_policy" {
+# Least-privilege policy document for building, pushing, and pulling Docker images from Amazon ECR
+data "aws_iam_policy_document" "ecr_policy" {
   statement {
     sid    = "ECRAuthToken"
     effect = "Allow"
     actions = [
-      "ecr:GetAuthorizationToken"
+      "ecr:GetAuthorizationToken",
+      "ecr:DescribeRepositories"
     ]
     resources = ["*"]
   }
 
   statement {
-    sid    = "ECRImagePull"
+    sid    = "ECRRepositoryAccess"
     effect = "Allow"
     actions = [
       "ecr:BatchCheckLayerAvailability",
       "ecr:GetDownloadUrlForLayer",
-      "ecr:BatchGetImage"
+      "ecr:BatchGetImage",
+      "ecr:PutImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:DescribeImages"
     ]
     resources = [
       aws_ecr_repository.backend.arn,
@@ -53,17 +59,17 @@ data "aws_iam_policy_document" "ecr_read_policy" {
   }
 }
 
-# IAM Policy for ECR image pull operations
-resource "aws_iam_policy" "ecr_pull" {
-  name        = "resqgrid-ecr-pull-policy-${var.environment}"
-  description = "Allows k3s EC2 node to pull images from ResQGrid ECR repositories"
-  policy      = data.aws_iam_policy_document.ecr_read_policy.json
+# IAM Policy for ECR image push/pull operations
+resource "aws_iam_policy" "ecr_access" {
+  name        = "resqgrid-ecr-access-policy-${var.environment}"
+  description = "Allows k3s EC2 dev node to pull and push images to ResQGrid ECR repositories"
+  policy      = data.aws_iam_policy_document.ecr_policy.json
 }
 
-# Attach ECR Pull Policy to the k3s Node Role
+# Attach ECR Policy to the k3s Node Role
 resource "aws_iam_role_policy_attachment" "k3s_ecr_attach" {
   role       = aws_iam_role.k3s_node_role.name
-  policy_arn = aws_iam_policy.ecr_pull.arn
+  policy_arn = aws_iam_policy.ecr_access.arn
 }
 
 # Attach AWS SSM Managed Instance Core (allows zero-trust browser/CLI SSH without open port 22)

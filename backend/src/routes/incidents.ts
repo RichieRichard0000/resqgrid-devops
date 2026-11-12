@@ -36,6 +36,36 @@ incidentRouter.get('/', async (req: Request, res: Response, next: NextFunction) 
 
     res.status(200).json({
       status: 'success',
+      success: true,
+      data: result.data,
+      pagination: result.pagination
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/incidents/nearby
+ * Convenience endpoint for spatial proximity queries (supports lat/lon/radius_km or latitude/longitude/radiusKm)
+ */
+incidentRouter.get('/nearby', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const lat = req.query.lat ?? req.query.latitude;
+    const lon = req.query.lon ?? req.query.longitude;
+    const radius_km = req.query.radius_km ?? req.query.radiusKm ?? 50;
+
+    const result = await incidentService.listIncidents({
+      lat: lat !== undefined ? Number(lat) : undefined,
+      lon: lon !== undefined ? Number(lon) : undefined,
+      radius_km: radius_km !== undefined ? Number(radius_km) : undefined,
+      page: 1,
+      limit: 50
+    });
+
+    res.status(200).json({
+      status: 'success',
+      success: true,
       data: result.data,
       pagination: result.pagination
     });

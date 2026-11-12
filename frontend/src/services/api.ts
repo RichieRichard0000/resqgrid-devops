@@ -101,17 +101,27 @@ export const api = {
     title?: string;
     location_name?: string;
   }): Promise<Incident> {
+    const authHeader = getAuthHeader();
+    if (!authHeader.Authorization) {
+      throw new Error('Authentication required: Please sign in as an Admin or Responder before dispatching disaster simulations.');
+    }
+
     const res = await fetch(`${API_BASE}/api/v1/incidents/simulate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
+        ...authHeader,
         Accept: 'application/json'
       },
       body: JSON.stringify(payload)
     });
 
     if (!res.ok) {
+      if (res.status === 401) {
+        localStorage.removeItem('resqgrid_token');
+        const err = await res.json().catch(() => ({ message: '' }));
+        throw new Error(err.message || 'Session expired or unauthorized. Please sign in as an Admin or Responder.');
+      }
       const err = await res.json().catch(() => ({ message: 'Simulation trigger failed' }));
       throw new Error(err.message || 'Simulation trigger failed. Ensure you are signed in.');
     }
@@ -155,6 +165,28 @@ export const api = {
     const json = await res.json();
     localStorage.setItem('resqgrid_token', json.data.token);
     return json.data;
+  },
+
+  async getMe(): Promise<User> {
+    const authHeader = getAuthHeader();
+    if (!authHeader.Authorization) {
+      throw new Error('No authentication token found');
+    }
+
+    const res = await fetch(`${API_BASE}/api/v1/auth/me`, {
+      headers: {
+        ...authHeader,
+        Accept: 'application/json'
+      }
+    });
+
+    if (!res.ok) {
+      localStorage.removeItem('resqgrid_token');
+      throw new Error('Session expired or invalid');
+    }
+
+    const json = await res.json();
+    return json.data.user;
   },
 
   async checkHealth(): Promise<{ ready: boolean; latencyMs?: number }> {

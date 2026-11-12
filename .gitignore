@@ -45,6 +45,12 @@ Thumbs.db
 **/.terraform/
 *.tfstate
 *.tfstate.*
+terraform.tfvars
+*.tfvars
+!terraform.tfvars.example
+*.tfplan
+*.plan
+tfplan
 crash.log
 crash.*.log
 override.tf
@@ -56,4 +62,16 @@ override.tf.json
 .scannerwork/
 trivy-results*.json
 dependency-check-report.*
+
+# Binary tools, archives, and temporary tokens
+*.jar
+*.tar.gz
+*.zip
+cookies*.txt
+*.pem
+*.key
+*.crt
+.kube/
+kubeconfig*
+
 

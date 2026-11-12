@@ -43,7 +43,7 @@ export interface User {
   email: string;
   full_name: string;
   role: UserRole;
-  is_active: boolean;
+  is_active?: boolean;
 }
 
 export interface GeofenceAlert {
@@ -56,9 +56,14 @@ export interface GeofenceAlert {
   timestamp: string;
 }
 
+export type LocationSource = 'gps' | 'manual';
+
 export interface UserLocation {
   latitude: number;
   longitude: number;
   accuracyMeters?: number;
   radiusKm: number;
+  source?: LocationSource;
+  timestamp?: number;
 }
+

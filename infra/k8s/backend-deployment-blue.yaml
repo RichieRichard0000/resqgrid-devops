@@ -71,6 +71,11 @@ spec:
                 secretKeyRef:
                   name: resqgrid-secrets
                   key: DB_PASSWORD
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: resqgrid-secrets
+                  key: DATABASE_URL
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:

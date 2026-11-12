@@ -1,0 +1,249 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-sa
+  namespace: resqgrid
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: resqgrid-platform
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-cr
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: resqgrid-platform
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/proxy", "services", "endpoints", "pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions", "networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-crb
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: resqgrid-platform
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-cr
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-sa
+    namespace: resqgrid
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: resqgrid
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: resqgrid-platform
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 10s
+      evaluation_interval: 10s
+      scrape_timeout: 8s
+
+    rule_files:
+      - "/etc/prometheus/alerts.yml"
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - "alertmanager:9093"
+
+    scrape_configs:
+      - job_name: "resqgrid-backend-service"
+        metrics_path: "/metrics"
+        static_configs:
+          - targets: ["backend-service:4000"]
+            labels:
+              app: "resqgrid-backend"
+              environment: "local-k8s"
+
+      - job_name: "kubernetes-pods"
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - resqgrid
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+
+      - job_name: "prometheus"
+        static_configs:
+          - targets: ["localhost:9090"]
+
+  alerts.yml: |
+    groups:
+      - name: resqgrid_alerts
+        rules:
+          - alert: ResQGridBackendDown
+            expr: up{job="resqgrid-backend-service"} == 0
+            for: 1m
+            labels:
+              severity: critical
+              project: resqgrid
+            annotations:
+              summary: "ResQGrid Backend Instance is Down"
+              description: "Instance {{ $labels.instance }} has been unreachable for more than 1 minute."
+
+          - alert: ResQGridHighErrorRate
+            expr: |
+              (
+                sum(rate(http_requests_total{status_code=~"5.."}[2m]))
+                /
+                sum(rate(http_requests_total[2m]))
+              ) * 100 > 5
+            for: 2m
+            labels:
+              severity: warning
+              project: resqgrid
+            annotations:
+              summary: "High HTTP 5xx Error Rate"
+              description: "5xx HTTP error rate is {{ $value | printf \"%.2f\" }}% over the last 2 minutes."
+
+          - alert: ResQGridHighRequestLatency
+            expr: |
+              histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[2m])) by (le)) > 1.5
+            for: 2m
+            labels:
+              severity: warning
+              project: resqgrid
+            annotations:
+              summary: "Elevated 95th Percentile Latency"
+              description: "p95 request latency is {{ $value | printf \"%.2f\" }}s (threshold: 1.5s)."
+
+          - alert: ResQGridEventLoopBlocked
+            expr: nodejs_eventloop_lag_seconds > 0.2
+            for: 1m
+            labels:
+              severity: warning
+              project: resqgrid
+            annotations:
+              summary: "Node.js Event Loop Lag Detected"
+              description: "Event loop lag on {{ $labels.instance }} is {{ $value | printf \"%.3f\" }}s, indicating synchronous CPU blocking."
+
+          - alert: ResQGridHighMemoryUsage
+            expr: |
+              (nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes) * 100 > 85
+            for: 3m
+            labels:
+              severity: warning
+              project: resqgrid
+            annotations:
+              summary: "High Heap Memory Consumption"
+              description: "Node.js heap memory utilization is {{ $value | printf \"%.1f\" }}% (potential memory leak)."
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: resqgrid
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: resqgrid-platform
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9090
+      targetPort: 9090
+      protocol: TCP
+      name: http
+  selector:
+    app: prometheus
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-deployment
+  namespace: resqgrid
+  labels:
+    app: prometheus
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: resqgrid-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        app.kubernetes.io/name: prometheus
+    spec:
+      serviceAccountName: prometheus-sa
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.50.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--storage.tsdb.retention.time=7d"
+            - "--web.enable-lifecycle"
+          ports:
+            - containerPort: 9090
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/prometheus
+            - name: storage-volume
+              mountPath: /prometheus
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9090
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9090
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-config
+        - name: storage-volume
+          emptyDir: {}

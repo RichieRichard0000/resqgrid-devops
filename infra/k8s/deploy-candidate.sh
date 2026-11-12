@@ -74,6 +74,7 @@ fi
 # Step 6: Atomic Production Traffic Switch
 echo "[6/6] All checks PASSED! Switching production Service to ${CANDIDATE_COLOR}..."
 kubectl patch service backend-service -n "${NAMESPACE}" -p "{\"spec\":{\"selector\":{\"release\":\"${CANDIDATE_COLOR}\"}}}"
+kubectl patch service backend -n "${NAMESPACE}" -p "{\"spec\":{\"selector\":{\"release\":\"${CANDIDATE_COLOR}\"}}}" 2>/dev/null || true
 
 # Update HPA target to the newly promoted active deployment
 kubectl patch hpa backend-hpa -n "${NAMESPACE}" -p "{\"spec\":{\"scaleTargetRef\":{\"name\":\"backend-${CANDIDATE_COLOR}\"}}}" 2>/dev/null || true

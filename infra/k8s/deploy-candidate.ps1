@@ -78,6 +78,7 @@ if (-not $DryRun) {
 Write-Host "[6/6] All checks PASSED! Switching production Service to $candidateColor..." -ForegroundColor Green
 if (-not $DryRun) {
   kubectl patch service backend-service -n $Namespace -p "{`"spec`":{`"selector`":{`"release`":`"$candidateColor`"}}}"
+  kubectl patch service backend -n $Namespace -p "{`"spec`":{`"selector`":{`"release`":`"$candidateColor`"}}}" 2>$null
   kubectl patch hpa backend-hpa -n $Namespace -p "{`"spec`":{`"scaleTargetRef`":{`"name`":`"backend-$candidateColor`"}}}" 2>$null
 } else {
   Write-Host "  [DRY-RUN] Simulated atomic selector patch: backend-service selector.release = $candidateColor" -ForegroundColor Green

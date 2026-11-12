@@ -41,6 +41,7 @@ Write-Host "[1/4] Rollback Target:        $TargetColor" -ForegroundColor Green
 Write-Host "[2/4] Switching production Service selector to $TargetColor..."
 if (-not $DryRun) {
   kubectl patch service backend-service -n $Namespace -p "{`"spec`":{`"selector`":{`"release`":`"$TargetColor`"}}}"
+  kubectl patch service backend -n $Namespace -p "{`"spec`":{`"selector`":{`"release`":`"$TargetColor`"}}}" 2>$null
 } else {
   Write-Host "  [DRY-RUN] Simulated selector patch: backend-service.selector.release = $TargetColor" -ForegroundColor Green
   Start-Sleep -Milliseconds 45

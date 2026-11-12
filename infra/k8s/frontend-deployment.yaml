@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/name: frontend
     app.kubernetes.io/part-of: resqgrid-platform
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -27,9 +27,11 @@ spec:
         app: frontend
         app.kubernetes.io/name: frontend
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: frontend
-          image: resqgrid-frontend:latest
+          image: 016626013328.dkr.ecr.ap-south-1.amazonaws.com/resqgrid-frontend:phase5-20261109
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80

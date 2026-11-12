@@ -11,11 +11,10 @@ metadata:
     app.kubernetes.io/name: postgres
     app.kubernetes.io/part-of: resqgrid-platform
 spec:
-  type: ClusterIP
-  selector:
-    app: postgres
+  type: ExternalName
+  externalName: host.docker.internal
   ports:
-    - port: 5432
-      targetPort: 5432
+    - port: 5433
+      targetPort: 5433
       protocol: TCP
       name: postgres

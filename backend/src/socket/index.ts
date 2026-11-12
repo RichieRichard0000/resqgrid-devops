@@ -68,7 +68,7 @@ export class RealtimeManager {
           });
 
           logger.info(
-            { socketId: socket.id, lat: parsed.latitude, lon: parsed.longitude, radiusKm: parsed.radius_km },
+            { socketId: socket.id, radiusKm: parsed.radius_km },
             'Client registered geographic geofence'
           );
         } catch (err: unknown) {
@@ -77,6 +77,20 @@ export class RealtimeManager {
             message: err instanceof Error ? err.message : 'Invalid geofence coordinates or radius'
           });
         }
+      });
+
+      // 1b. Unsubscribe client from geographic alerts when location is cleared
+      socket.on('unsubscribe_geofence', () => {
+        const session = this.clientSessions.get(socket.id);
+        if (session) {
+          delete session.location;
+          this.clientSessions.set(socket.id, session);
+        }
+        socket.emit('geofence_unsubscribed', {
+          status: 'unsubscribed',
+          message: 'Unsubscribed from geographic alerts.'
+        });
+        logger.info({ socketId: socket.id }, 'Client unsubscribed from geographic geofence');
       });
 
       // 2. Client asks for synchronization after reconnecting

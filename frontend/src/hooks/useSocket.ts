@@ -80,12 +80,16 @@ export function useSocket({ userLocation, onIncidentEvent, onGeofenceAlert }: Us
   // Sync geofence subscription whenever user location or radius changes
   useEffect(() => {
     const socket = socketRef.current;
-    if (socket && socket.connected && userLocation) {
-      socket.emit('subscribe_geofence', {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
-        radius_km: userLocation.radiusKm
-      });
+    if (socket && socket.connected) {
+      if (userLocation) {
+        socket.emit('subscribe_geofence', {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          radius_km: userLocation.radiusKm
+        });
+      } else {
+        socket.emit('unsubscribe_geofence');
+      }
     }
   }, [userLocation?.latitude, userLocation?.longitude, userLocation?.radiusKm]);
 

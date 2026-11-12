@@ -1,0 +1,5 @@
+def user = hudson.model.User.get('admin', false)
+def password = hudson.security.HudsonPrivateSecurityRealm.Details.fromPlainPassword('admin')
+user.addProperty(password)
+user.save()
+println("Jenkins admin password successfully set to: admin")

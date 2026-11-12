@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { X, Flame, Send } from 'lucide-react';
-import { IncidentType, IncidentSeverity, UserLocation } from '../types/index.js';
+import { X, Flame, Send, ShieldAlert, ShieldCheck, Lock } from 'lucide-react';
+import { IncidentType, IncidentSeverity, UserLocation, User } from '../types/index.js';
 
 interface SimulateModalProps {
   userLocation: UserLocation | null;
+  currentUser?: User | null;
   onClose: () => void;
+  onOpenAuth?: () => void;
   onDispatch: (payload: {
     incident_type: IncidentType;
     severity: IncidentSeverity;
@@ -18,7 +20,9 @@ interface SimulateModalProps {
 
 export const SimulateModal: React.FC<SimulateModalProps> = ({
   userLocation,
+  currentUser,
   onClose,
+  onOpenAuth,
   onDispatch
 }) => {
   const [type, setType] = useState<IncidentType>('flood');
@@ -62,6 +66,18 @@ export const SimulateModal: React.FC<SimulateModalProps> = ({
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
+
+    if (!currentUser) {
+      setError('Authentication required: You must be signed in as an Admin or Responder to dispatch simulation drills.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (currentUser.role !== 'admin' && currentUser.role !== 'responder') {
+      setError(`Access denied: Your current role is "${currentUser.role}". Simulation dispatch requires Admin or Responder privileges.`);
+      setIsSubmitting(false);
+      return;
+    }
 
     const generatedTitle =
       title.trim() || `[SIMULATION] Urgent ${type.toUpperCase()} Emergency Drill`;
@@ -111,6 +127,44 @@ export const SimulateModal: React.FC<SimulateModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
+          {/* Authentication State Banner */}
+          {!currentUser ? (
+            <div className="p-3 rounded-lg bg-amber-950/40 border border-amber-800/60 text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Simulation requires an authenticated <strong>Admin</strong> or <strong>Responder</strong> session.</span>
+              </div>
+              {onOpenAuth && (
+                <button
+                  type="button"
+                  onClick={onOpenAuth}
+                  className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-semibold shrink-0"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
+          ) : currentUser.role !== 'admin' && currentUser.role !== 'responder' ? (
+            <div className="p-2.5 rounded-lg bg-rose-950/40 border border-rose-800/60 text-rose-300 flex items-center gap-2">
+              <Lock className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>Signed in as <strong>{currentUser.full_name}</strong> (Viewer). Simulation dispatch requires Admin or Responder role.</span>
+            </div>
+          ) : (
+            <div className="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span className="text-slate-300">Authorized Operator: <strong>{currentUser.full_name}</strong></span>
+              </div>
+              <span className={`uppercase text-[10px] px-2 py-0.5 rounded font-bold tracking-wider ${
+                currentUser.role === 'admin'
+                  ? 'bg-red-950 text-red-300 border border-red-800'
+                  : 'bg-amber-950 text-amber-300 border border-amber-800'
+              }`}>
+                {currentUser.role}
+              </span>
+            </div>
+          )}
+
           {error && (
             <div className="p-2.5 rounded-lg bg-rose-950/50 border border-rose-800 text-rose-300">
               {error}
@@ -274,8 +328,8 @@ export const SimulateModal: React.FC<SimulateModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold shadow-lg shadow-amber-600/30"
+              disabled={isSubmitting || (!!currentUser && currentUser.role !== 'admin' && currentUser.role !== 'responder')}
+              className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white rounded-lg font-bold shadow-lg shadow-amber-600/30"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{isSubmitting ? 'Broadcasting...' : 'Broadcast Drill Event'}</span>

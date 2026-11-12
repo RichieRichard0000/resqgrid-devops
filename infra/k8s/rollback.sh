@@ -36,6 +36,7 @@ echo "[1/4] Rollback Target Release:          ${TARGET_COLOR}"
 # Step 2: Instant Atomic Selector Flip
 echo "[2/4] Switching production Service selector to ${TARGET_COLOR}..."
 kubectl patch service backend-service -n "${NAMESPACE}" -p "{\"spec\":{\"selector\":{\"release\":\"${TARGET_COLOR}\"}}}"
+kubectl patch service backend -n "${NAMESPACE}" -p "{\"spec\":{\"selector\":{\"release\":\"${TARGET_COLOR}\"}}}" 2>/dev/null || true
 
 # Step 3: Re-align HPA target
 echo "[3/4] Re-aligning HPA scaleTargetRef to backend-${TARGET_COLOR}..."

@@ -28,22 +28,28 @@ resource "aws_security_group" "k3s" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Ingress: Kubernetes API (Restricted to Administrator IP range)
-  ingress {
-    description = "Kubernetes API endpoint (Restricted)"
-    from_port   = 6443
-    to_port     = 6443
-    protocol    = "tcp"
-    cidr_blocks = var.admin_cidr_blocks
+  # Ingress: Kubernetes API (Only opened if explicit admin_cidr_blocks is provided)
+  dynamic "ingress" {
+    for_each = length(var.admin_cidr_blocks) > 0 ? [1] : []
+    content {
+      description = "Kubernetes API endpoint (Restricted)"
+      from_port   = 6443
+      to_port     = 6443
+      protocol    = "tcp"
+      cidr_blocks = var.admin_cidr_blocks
+    }
   }
 
-  # Ingress: SSH (Restricted to Administrator IP range)
-  ingress {
-    description = "SSH Admin Access (Restricted)"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = var.admin_cidr_blocks
+  # Ingress: SSH (Only opened if explicit admin_cidr_blocks is provided; SSM preferred)
+  dynamic "ingress" {
+    for_each = length(var.admin_cidr_blocks) > 0 ? [1] : []
+    content {
+      description = "SSH Admin Access (Restricted)"
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = var.admin_cidr_blocks
+    }
   }
 
   # Ingress: Intra-cluster pod/node communication (Self-referencing)

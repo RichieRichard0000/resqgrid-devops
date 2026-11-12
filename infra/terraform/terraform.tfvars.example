@@ -17,17 +17,27 @@ public_subnet_cidr  = "10.0.1.0/24"
 private_subnet_cidr = "10.0.2.0/24"
 availability_zone   = "ap-south-1a"
 
-# Compute: t3.medium provides 2 vCPU and 4 GiB memory (sweet spot for k3s + backend + frontend + postgis)
-instance_type    = "t3.medium"
-root_volume_size = 30
+# Compute: c7i-flex.large provides 2 vCPU and 4 GiB memory (Sapphire Rapids compute-optimized)
+instance_type    = "c7i-flex.large"
+root_volume_size = 40
 
-# Optional EC2 SSH Key Pair name (leave empty if using AWS SSM Session Manager)
-# key_name = "resqgrid-devops-key"
+# EC2 SSH Key Pair name for VS Code / Antigravity Remote-SSH authentication over SSM.
+# REQUIRED for Remote-SSH: Generate key pair before running terraform apply:
+#   Windows (PowerShell):
+#     aws ec2 create-key-pair --key-name resqgrid-key --region ap-south-1 --query "KeyMaterial" --output text | Out-File -Encoding ascii ~/.ssh/resqgrid-key.pem
+#     icacls "$HOME\.ssh\resqgrid-key.pem" /inheritance:r /grant:r "$($env:USERNAME):(R)"
+#   Linux / macOS:
+#     aws ec2 create-key-pair --key-name resqgrid-key --region ap-south-1 --query "KeyMaterial" --output text > ~/.ssh/resqgrid-key.pem
+#     chmod 400 ~/.ssh/resqgrid-key.pem
+# If left empty, native SSM Session Manager provides passwordless shell access without SSH keys:
+#   aws ssm start-session --target <instance-id>
+key_name = "resqgrid-key"
 
-# Restrict management access to your team's public IP range (recommended: "203.0.113.50/32")
-admin_cidr_blocks = [
-  "0.0.0.0/0" # WARNING: Replace with your specific IP range for production
-]
+# Restrict management access (SSH 22, K8s API 6443).
+# Default: empty list [] opens NO management ports to the internet (connect securely via AWS SSM).
+# To allow direct access from your workstation IP, uncomment and set your IP:
+admin_cidr_blocks = []
+# admin_cidr_blocks = ["203.0.113.50/32"]
 
 # ECR Repositories
 backend_repo_name  = "resqgrid-backend"

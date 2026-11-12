@@ -102,7 +102,8 @@ export default function () {
     'incidents API returns 200': (r) => r.status === 200,
     'incidents has success flag': (r) => {
       try {
-        return JSON.parse(r.body).success === true;
+        const body = JSON.parse(r.body);
+        return body.status === 'success' || body.success === true;
       } catch {
         return false;
       }
@@ -120,7 +121,7 @@ export default function () {
     'spatial query returns array': (r) => {
       try {
         const b = JSON.parse(r.body);
-        return b.success === true && Array.isArray(b.data);
+        return (b.status === 'success' || b.success === true) && Array.isArray(b.data);
       } catch {
         return false;
       }

@@ -12,8 +12,6 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - secrets.yaml
-  - postgres-pvc.yaml
-  - postgres-deployment.yaml
   - postgres-service.yaml
   - backend-deployment-blue.yaml
   - backend-deployment-green.yaml
@@ -23,6 +21,9 @@ resources:
   - backend-hpa.yaml
   - frontend-deployment.yaml
   - frontend-service.yaml
+  - prometheus.yaml
+  - grafana.yaml
+  - alertmanager.yaml
   - ingress.yaml
 
 labels:

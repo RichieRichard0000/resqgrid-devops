@@ -21,6 +21,8 @@ export function App() {
     radiusKm,
     errorMessage: geoError,
     requestLocation,
+    retryLocation,
+    setTestLocation,
     setRadiusKm,
     clearLocation
   } = useGeolocation(50);
@@ -42,6 +44,19 @@ export function App() {
 
   // Authentication State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Restore authenticated session from persistent storage on mount
+  useEffect(() => {
+    const token = localStorage.getItem('resqgrid_token');
+    if (token) {
+      api.getMe()
+        .then((user) => setCurrentUser(user))
+        .catch(() => {
+          localStorage.removeItem('resqgrid_token');
+          setCurrentUser(null);
+        });
+    }
+  }, []);
 
   // Active Blue-Green Release Environment State
   const [releaseColor, setReleaseColor] = useState<'blue' | 'green'>('blue');
@@ -197,8 +212,11 @@ export function App() {
           radiusKm={radiusKm}
           errorMessage={geoError}
           onRequestLocation={requestLocation}
+          onRetryLocation={retryLocation}
           onSetRadiusKm={setRadiusKm}
           onClearLocation={clearLocation}
+          onUseTestLocation={() => setTestLocation(12.823, 80.044)}
+          onSetManualCoordinates={(lat, lon) => setTestLocation(lat, lon)}
         />
 
         {/* Hazard & Severity Filters */}
@@ -250,7 +268,12 @@ export function App() {
       {isSimulateOpen && (
         <SimulateModal
           userLocation={userLocation}
+          currentUser={currentUser}
           onClose={() => setIsSimulateOpen(false)}
+          onOpenAuth={() => {
+            setIsSimulateOpen(false);
+            setIsAuthOpen(true);
+          }}
           onDispatch={handleDispatchSimulation}
         />
       )}

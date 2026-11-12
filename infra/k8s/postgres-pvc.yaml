@@ -13,9 +13,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  # In k3s, local-path is the built-in default provisioner.
-  # On AWS EBS CSI driver, gp3 or gp2 can be substituted.
-  storageClassName: local-path
+  # Omit storageClassName to bind the cluster default StorageClass (hostpath on Docker Desktop, local-path on k3s)
   resources:
     requests:
       storage: 10Gi

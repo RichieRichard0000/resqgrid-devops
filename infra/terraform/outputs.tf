@@ -44,18 +44,37 @@ output "ssm_connect_command" {
 }
 
 output "kubeconfig_fetch_command" {
-  description = "Command to extract k3s kubeconfig to local workstation"
-  value       = "ssh -i <your-key.pem> ubuntu@${aws_eip.k3s_eip.public_ip} 'sudo cat /etc/rancher/k3s/k3s.yaml' | sed 's/127.0.0.1/${aws_eip.k3s_eip.public_ip}/g' > kubeconfig-resqgrid.yaml"
+  description = "Command to extract k3s kubeconfig to local workstation via SSM-tunneled SSH without opening port 22"
+  value       = "ssh resqgrid-dev 'sudo cat /etc/rancher/k3s/k3s.yaml' | sed 's/127.0.0.1/${aws_eip.k3s_eip.public_ip}/g' > kubeconfig-resqgrid.yaml"
+}
+
+output "vscode_ssh_config" {
+  description = "SSH configuration block for VS Code / Antigravity Remote-SSH via AWS SSM (Zero-trust, no port 22 open)"
+  value       = <<-EOF
+    # ResQGrid Cloud Development Workstation (Add to ~/.ssh/config)
+    Host resqgrid-dev
+      HostName ${aws_instance.k3s_host.id}
+      User ubuntu
+      ProxyCommand aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p' --region ${var.aws_region}
+      IdentityFile ~/.ssh/${var.key_name != "" ? var.key_name : "resqgrid-key"}.pem
+      StrictHostKeyChecking accept-new
+      ${var.key_name == "" ? "# Note: key_name not set in terraform.tfvars. SSH requires an authorized key in ~ubuntu/.ssh/authorized_keys." : ""}
+  EOF
+}
+
+output "dev_workspace_path" {
+  description = "Remote project directory path on the EC2 development workstation"
+  value       = "/home/ubuntu/workspace/resqgrid"
 }
 
 output "estimated_monthly_cost_usd" {
   description = "Estimated monthly baseline cost for ResQGrid infrastructure on AWS"
   value = {
-    "EC2_t3_medium_on_demand" = "$30.37 / month (ap-south-1)",
-    "EBS_gp3_30GB"            = "$2.40 / month",
-    "Public_IPv4_Elastic_IP"  = "$3.65 / month ($0.005/hr)",
-    "ECR_storage_15_images"   = "~$0.50 / month",
-    "NAT_Gateway"             = "$0.00 (Avoided by design - saves $32.40/mo)",
-    "Total_Estimated_Cost"    = "~$36.92 / month (~INR 3,080 / month)"
+    "EC2_c7i_flex_large_on_demand" = "~$61.90 / month ($0.08479/hr in ap-south-1)",
+    "EBS_gp3_40GB"                 = "$3.20 / month ($0.08/GB)",
+    "Public_IPv4_Elastic_IP"       = "$3.65 / month ($0.005/hr)",
+    "ECR_storage_15_images"        = "~$0.50 / month",
+    "NAT_Gateway"                  = "$0.00 (Avoided by design - saves $32.40/mo)",
+    "Total_Estimated_Cost"         = "~$69.25 / month (~INR 5,790 / month; 8-hr demo costs ~$0.70 USD / ~INR 58)"
   }
 }

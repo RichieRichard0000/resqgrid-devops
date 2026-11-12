@@ -8,17 +8,27 @@ Write-Host "====================================================================
 Write-Host " Security Failure Drill: Aqua Trivy Gate Enforcement" -ForegroundColor Cyan
 Write-Host "========================================================================" -ForegroundColor Cyan
 
+# Resolve Trivy binary path
+$trivyBin = "trivy"
+$trivyCmd = Get-Command trivy -ErrorAction SilentlyContinue
+if (-not $trivyCmd) {
+  $winGetTrivy = "$env:LOCALAPPDATA\Microsoft\WinGet\Links\trivy.exe"
+  if (Test-Path $winGetTrivy) {
+    $trivyBin = $winGetTrivy
+  }
+}
+
 # 1. Scan our production image (Should PASS with 0 vulnerabilities)
 Write-Host "`n[Test 1] Scanning Approved ResQGrid Production Repository..." -ForegroundColor Yellow
-$cleanResult = trivy fs --severity HIGH,CRITICAL --scanners vuln .
+& $trivyBin fs --severity HIGH,CRITICAL --scanners vuln .
 Write-Host "Approved Workspace Scan Status: CLEAN (Exit Code 0)" -ForegroundColor Green
 
 # 2. Demonstrate blocking on an image with known unpatched CVEs
 Write-Host "`n[Test 2] Demonstrating Security Gate Blocking on Vulnerable Image..." -ForegroundColor Yellow
-Write-Host "Command: trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress alpine:3.10"
+Write-Host "Command: $trivyBin image --severity HIGH,CRITICAL --exit-code 1 --no-progress alpine:3.10"
 $vulnerableExit = 0
 try {
-  & trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress alpine:3.10
+  & $trivyBin image --severity HIGH,CRITICAL --exit-code 1 --no-progress alpine:3.10
   $vulnerableExit = $LASTEXITCODE
 } catch {
   $vulnerableExit = 1

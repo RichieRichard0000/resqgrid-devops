@@ -158,4 +158,51 @@ describe('Real-Time Socket.IO & Geofence Alert Delivery', () => {
       realtimeManager.broadcastIncident(farIncident, 'CREATED');
     });
   });
+
+  it('unsubscribes from geographic geofence alerts when client clears location', async () => {
+    return new Promise<void>((resolve) => {
+      clientSocket.emit('unsubscribe_geofence');
+
+      clientSocket.once('geofence_unsubscribed', (ack: { status: string }) => {
+        expect(ack.status).toBe('unsubscribed');
+
+        // Now broadcast a nearby incident that would normally trigger an alert
+        const nearbyIncident: Incident = {
+          id: 'nearby-incident-after-unsub',
+          title: 'Nearby Incident After Unsubscribe',
+          description: 'Should not trigger geofence alert.',
+          incident_type: 'flood',
+          severity: 'high',
+          status: 'active',
+          location_name: 'Tambaram East',
+          latitude: 12.9249,
+          longitude: 80.1,
+          radius_km: 15.0,
+          event_time: new Date().toISOString(),
+          source: 'SIMULATED',
+          is_simulated: true,
+          metadata: {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        let receivedAlert = false;
+        const alertListener = () => {
+          receivedAlert = true;
+        };
+        clientSocket.on('geofence_alert', alertListener);
+
+        clientSocket.once('incident_event', () => {
+          setTimeout(() => {
+            clientSocket.off('geofence_alert', alertListener);
+            expect(receivedAlert).toBe(false);
+            resolve();
+          }, 150);
+        });
+
+        realtimeManager.broadcastIncident(nearbyIncident, 'CREATED');
+      });
+    });
+  });
 });
+

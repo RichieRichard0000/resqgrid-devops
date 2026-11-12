@@ -311,6 +311,80 @@ describe('ResQGrid REST API Integration', () => {
       expect(res.status).toBe(201);
       expect(res.body.data.incident.is_simulated).toBe(true);
     });
+
+    it('rejects /simulate without Authorization header with 401', async () => {
+      const res = await request(app)
+        .post('/api/v1/incidents/simulate')
+        .send({
+          latitude: 12.8230,
+          longitude: 80.0444,
+          incident_type: 'flood',
+          severity: 'high'
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('Missing or malformed Authorization header');
+    });
+
+    it('rejects /simulate with invalid or expired token with 401', async () => {
+      const res = await request(app)
+        .post('/api/v1/incidents/simulate')
+        .set('Authorization', 'Bearer invalid.expired.token')
+        .send({
+          latitude: 12.8230,
+          longitude: 80.0444,
+          incident_type: 'flood',
+          severity: 'high'
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('Invalid or expired authentication token');
+    });
+
+    it('rejects /simulate with viewer role with 403 Forbidden', async () => {
+      const res = await request(app)
+        .post('/api/v1/incidents/simulate')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .send({
+          latitude: 12.8230,
+          longitude: 80.0444,
+          incident_type: 'flood',
+          severity: 'high'
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.message).toContain('Access denied');
+    });
+
+    it('allows /simulate with responder role with 201 Created', async () => {
+      const simIncident = {
+        ...sampleIncident,
+        id: 'sim-drill-responder-001',
+        is_simulated: true,
+        source: 'SIMULATED'
+      };
+
+      vi.spyOn(poolModule, 'query').mockResolvedValueOnce({
+        rows: [simIncident],
+        rowCount: 1,
+        command: 'INSERT',
+        oid: 0,
+        fields: []
+      });
+
+      const res = await request(app)
+        .post('/api/v1/incidents/simulate')
+        .set('Authorization', `Bearer ${responderToken}`)
+        .send({
+          latitude: 12.9249,
+          longitude: 80.1000,
+          incident_type: 'flood',
+          severity: 'high'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.incident.is_simulated).toBe(true);
+    });
   });
 
   describe('Provider Status (/api/v1/providers)', () => {

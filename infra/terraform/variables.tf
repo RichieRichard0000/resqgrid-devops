@@ -40,21 +40,21 @@ variable "availability_zone" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type for k3s cluster (t3.medium: 2 vCPU, 4GB RAM - cost-efficient sweet spot)"
+  description = "EC2 instance type for k3s cluster (c7i-flex.large: 2 vCPU, 4 GiB RAM - 4th Gen Intel Xeon Scalable Sapphire Rapids compute optimized)"
   type        = string
-  default     = "t3.medium"
+  default     = "c7i-flex.large"
 }
 
 variable "key_name" {
-  description = "Optional EC2 Key Pair name for SSH access (AWS SSM Session Manager recommended instead)"
+  description = "EC2 Key Pair name for SSH public key authentication over AWS SSM ProxyCommand (e.g. 'resqgrid-key'). Cloud-init installs this key into ~ubuntu/.ssh/authorized_keys. If left empty, native SSM Session Manager (aws ssm start-session) provides passwordless shell access without SSH keys."
   type        = string
   default     = ""
 }
 
 variable "admin_cidr_blocks" {
-  description = "CIDR blocks permitted to access management ports (SSH 22, Kube API 6443)"
+  description = "Optional CIDR blocks permitted to access management ports (SSH 22, Kube API 6443). Defaults to empty list for zero-trust AWS SSM Session Manager access without open management ports."
   type        = list(string)
-  default     = ["0.0.0.0/0"] # Recommendation: Restrict to student/institution IP in production
+  default     = []
 }
 
 variable "backend_repo_name" {
@@ -70,7 +70,7 @@ variable "frontend_repo_name" {
 }
 
 variable "root_volume_size" {
-  description = "EBS gp3 root volume size in GB"
+  description = "EBS gp3 root volume size in GB (40 GB provides ample headroom for Docker images, k3s, dev tools, and 4GB swap)"
   type        = number
-  default     = 30
+  default     = 40
 }
