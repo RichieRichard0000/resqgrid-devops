@@ -82,7 +82,6 @@
       - "Root Storage: {{ (root_mount.size_available / 1024 / 1024 / 1024) | round(2) }} GB free of {{ (root_mount.size_total / 1024 / 1024 / 1024) | round(2) }} GB"
       - "Docker Status: active (version {{ docker_version_output.stdout | default('N/A') }})"
       - "k3s Status: active"
-      - "SonarQube Kernel Tuning: vm.max_map_count={{ sonar_max_map_count | default('262144') }} (verified)"
       - "Workspace: {{ app_workspace_dir }} (verified)"
       - "================================================================="
       - "                  KUBERNETES WORKLOADS AUDIT                     "

@@ -24,38 +24,24 @@ ansible/
 │   └── hosts.ini              # Managed hosts definition using SSH alias 'resqgrid-dev'
 ├── playbooks/
 │   ├── site.yml               # Master orchestration entrypoint
-│   └── server_setup.yml       # Server configuration, SonarQube, and audit playbook
+│   └── server_setup.yml       # Server configuration and audit playbook
 ├── roles/
 │   ├── common/                # Role: Baseline system utilities, OS assertions, workspace
 │   ├── docker/                # Role: Docker engine status and container verification
-│   ├── sonarqube/             # Role: SonarQube kernel tuning (vm.max_map_count) & config
 │   └── verification/          # Role: k3s status, pod health, disk/memory assertions
 └── README.md                  # Comprehensive viva guide & documentation
 ```
 
 ---
 
-## 3. SonarQube Static Application Security Testing (SAST)
+## 3. Lightweight Security & Quality Architecture (Why SonarQube Was Replaced)
 
-SonarQube provides continuous inspection of code quality, detecting bugs, security vulnerabilities, and code smells.
+During development, running a full **SonarQube Server** was evaluated. However, SonarQube’s JVM and embedded Elasticsearch engine require **3 to 4 GiB of dedicated RAM** (`-Xms2g -Xmx2g`), which would consume nearly 100% of our 4 GiB EC2 instance and cause Out-Of-Memory (OOM) kernel panics with Jenkins and Kubernetes running concurrently.
 
-### A. Kernel Tuning (`roles/sonarqube`)
-SonarQube's embedded search engine requires `vm.max_map_count >= 262144`. Ansible automatically configures and persists this parameter:
-```yaml
-- name: "[SonarQube] Ensure vm.max_map_count is configured"
-  ansible.builtin.lineinfile:
-    path: /etc/sysctl.conf
-    line: "vm.max_map_count=262144"
-```
-
-### B. Project Configuration (`sonar-project.properties`)
-- **Key:** `resqgrid`
-- **Sources Analyzed:** `backend/src`, `frontend/src`
-- **Unit Test Execution Reports:** `backend/junit.xml`, `frontend/junit.xml` (from 110 Vitest tests)
-- **Quality Gate:** Enforces zero critical bugs and high security/reliability ratings before builds pass.
-
-### C. Execution Script
-Executed via `scripts/run-sonarqube-analysis.sh` or within the Jenkins pipeline.
+To achieve superior code quality and security without the memory bloat, we implemented a specialized 3-tier cloud-native stack:
+1. **Static Code Quality & Type Safety:** Strict TypeScript compiler checking (`tsc --noEmit`) in [backend/package.json](file:///C:/Users/baran/Downloads/Devops_project/backend/package.json#L15) and [frontend/package.json](file:///C:/Users/baran/Downloads/Devops_project/frontend/package.json#L12).
+2. **Container & Filesystem SAST:** **Aqua Trivy 0.76.2**, scanning for CVE vulnerabilities, misconfigurations, and exposed credentials (< 150 MB RAM).
+3. **Software Supply Chain Security (SCA):** **OWASP Dependency-Check 12.1.0**, auditing npm dependencies against the NIST National Vulnerability Database.
 
 ---
 
@@ -87,12 +73,12 @@ ansible-playbook -i inventory/hosts.ini playbooks/site.yml
 ```mermaid
 flowchart LR
     A["Terraform"] -->|"Provisions VPC, Subnet, SG, EC2"| B["Ansible"]
-    B -->|"Configures Docker, k3s, SonarQube sysctl"| C["k3s & Docker"]
+    B -->|"Configures Docker, k3s, Baseline Packages"| C["k3s & Docker"]
     C -->|"Hosts ResQGrid Pods & Jenkins CI"| D["Jenkins CI/CD"]
-    D -->|"Runs Vitest, SonarQube, Trivy & OWASP"| E["Zero-Downtime Blue-Green"]
+    D -->|"Runs Vitest, Trivy, OWASP & tsc"| E["Zero-Downtime Blue-Green"]
 ```
 
 1. **Terraform (Day 0):** Pure cloud IaC with zero embedded bash user-data.
 2. **Ansible (Day 1 / Day 2):** Idempotent configuration management over zero-trust AWS SSM.
-3. **SonarQube + Vitest + Trivy + OWASP:** Complete 4-tier security & quality gate.
+3. **Vitest + Trivy + OWASP + tsc:** Complete 4-tier security & quality gate with low RAM footprint.
 4. **Kubernetes (k3s):** Orchestrates ResQGrid microservices, PostgreSQL, Prometheus, Grafana, and Alertmanager.

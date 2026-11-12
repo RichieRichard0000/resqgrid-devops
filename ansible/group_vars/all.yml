@@ -35,10 +35,6 @@ k3s_service_name: "k3s"
 k3s_service_state: "started"
 k3s_service_enabled: true
 
-# SonarQube configuration
-sonarqube_port: 9000
-sonarqube_sysctl_max_map_count: 262144
-
 # Application workspace configuration
 app_workspace_dir: "/home/ubuntu/workspace/resqgrid"
 app_workspace_owner: "ubuntu"
