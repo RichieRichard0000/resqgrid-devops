@@ -1,9 +1,0 @@
----
-# Handlers for role: common
-# Handlers are defined for reference but not invoked unnecessarily
-# to prevent disruptions to running ResQGrid workloads.
-- name: Restart sshd
-  ansible.builtin.service:
-    name: ssh
-    state: restarted
-  become: true

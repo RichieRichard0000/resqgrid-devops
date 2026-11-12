@@ -1,8 +1,0 @@
----
-# Handlers for role: docker
-# Defined for reference; restarts should never be triggered on active live environments.
-- name: Restart docker
-  ansible.builtin.service:
-    name: "{{ docker_daemon_service }}"
-    state: restarted
-  become: true

@@ -1,6 +1,0 @@
----
-# Defaults for role: docker
-docker_daemon_service: "docker"
-docker_target_state: "started"
-docker_start_on_boot: true
-
