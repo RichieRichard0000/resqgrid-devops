@@ -1,0 +1,7 @@
+---
+# Handlers for role: docker
+- name: Restart docker
+  ansible.builtin.service:
+    name: "{{ docker_daemon_service }}"
+    state: restarted
+  become: true

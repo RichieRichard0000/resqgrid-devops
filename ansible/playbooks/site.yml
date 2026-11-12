@@ -1,0 +1,9 @@
+---
+# ==============================================================================
+# Playbook: site.yml
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# Purpose: Master orchestration playbook importing all configuration modules
+# ==============================================================================
+
+- name: Orchestrate ResQGrid Server Configuration
+  import_playbook: server_setup.yml

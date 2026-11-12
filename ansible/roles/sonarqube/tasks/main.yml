@@ -1,0 +1,43 @@
+---
+# ==============================================================================
+# Tasks for role: sonarqube
+# ==============================================================================
+
+- name: "[SonarQube] Check current vm.max_map_count kernel setting"
+  ansible.builtin.command: sysctl -n vm.max_map_count
+  register: sysctl_map_count
+  changed_when: false
+  check_mode: false
+
+- name: "[SonarQube] Ensure vm.max_map_count is configured for SonarQube / Elasticsearch"
+  ansible.builtin.lineinfile:
+    path: /etc/sysctl.conf
+    line: "vm.max_map_count={{ sonar_max_map_count }}"
+    regexp: '^vm\.max_map_count'
+    state: present
+  become: true
+
+- name: "[SonarQube] Apply vm.max_map_count runtime setting if required"
+  ansible.builtin.command: "sysctl -w vm.max_map_count={{ sonar_max_map_count }}"
+  when: sysctl_map_count.stdout | int < sonar_max_map_count | int
+  become: true
+
+- name: "[SonarQube] Verify sonar-project.properties exists in workspace"
+  ansible.builtin.stat:
+    path: "{{ sonar_config_file }}"
+  register: sonar_props_stat
+
+- name: "[SonarQube] Assert SonarQube project configuration is present"
+  ansible.builtin.assert:
+    that:
+      - sonar_props_stat.stat.exists
+    fail_msg: "sonar-project.properties not found at {{ sonar_config_file }}"
+    success_msg: "Verified SonarQube configuration file at {{ sonar_config_file }}"
+
+- name: "[SonarQube] Display SonarQube environment readiness"
+  ansible.builtin.debug:
+    msg:
+      - "SonarQube Host Target: http://localhost:{{ sonar_port }}"
+      - "Kernel vm.max_map_count: {{ sonar_max_map_count }} (configured)"
+      - "Config File: {{ sonar_config_file }} (verified)"
+      - "Scanner Integration: scripts/run-sonarqube-analysis.sh ready"

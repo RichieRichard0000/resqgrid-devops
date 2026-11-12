@@ -1,0 +1,5 @@
+---
+# Defaults for role: sonarqube
+sonar_port: "{{ sonarqube_port | default(9000) }}"
+sonar_max_map_count: "{{ sonarqube_sysctl_max_map_count | default(262144) }}"
+sonar_config_file: "{{ app_workspace_dir }}/sonar-project.properties"
