@@ -1,0 +1,24 @@
+================================================================================
+JENKINS CI/CD EXECUTION FAILURE LOG — BUILD #5 (INITIAL SONARQUBE INTEGRATION)
+Stage: 5. SonarQube Static Code Analysis & Quality Gate
+Target: ResQGrid (backend/src, frontend/src)
+================================================================================
+
+[INFO] Scanning source code with SonarScanner CLI...
+[INFO] 110 test results imported from backend/junit.xml and frontend/junit.xml
+[INFO] Analysis report generated in 14.2s
+[INFO] Checking Quality Gate status on http://localhost:9000/api/qualitygates/project_status?projectKey=resqgrid...
+
+--------------------------------------------------------------------------------
+QUALITY GATE STATUS: FAILED
+--------------------------------------------------------------------------------
+Reason: Metric thresholds breached on new code.
+  - Overall Line Coverage: 78.4% (Threshold: >= 95.0%) -> [FAIL]
+  - Security Rating: A (Threshold: A)                  -> [PASS]
+  - Reliability Rating: A (Threshold: A)               -> [PASS]
+  - Security Hotspots: 0 reviewed                      -> [PASS]
+
+ERROR: SonarQube Quality Gate failed! Build halted per 'sonar.qualitygate.wait=true' setting.
+Build step 'Execute shell' marked build as failure
+Finished: FAILURE
+================================================================================
