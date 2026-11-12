@@ -1,0 +1,19 @@
+================================================================================
+ANSIBLE PLAYBOOK EXECUTION FAILURE LOG — INITIAL SETUP ATTEMPT
+Command: ansible-playbook -i inventory/hosts.ini playbooks/site.yml
+================================================================================
+
+[WARNING]: Ansible is being run in a world writable directory, ignoring it as an ansible.cfg source.
+[ERROR]: the role 'sonarqube' was not found in /mnt/c/Users/baran/Downloads/Devops_project/ansible/playbooks/roles:/home/devansh/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:/mnt/c/Users/baran/Downloads/Devops_project/ansible/playbooks
+Origin: /mnt/c/Users/baran/Downloads/Devops_project/ansible/playbooks/server_setup.yml:15:7
+
+13   roles:
+14     - role: common
+15     - role: sonarqube
+         ^ column 7
+
+fatal: [resqgrid-dev]: FAILED! => {"changed": false, "msg": "Role 'sonarqube' could not be resolved in the default search paths."}
+
+PLAY RECAP *********************************************************************
+resqgrid-dev               : ok=0    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0
+================================================================================
