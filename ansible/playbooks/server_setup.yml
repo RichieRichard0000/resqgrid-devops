@@ -1,0 +1,16 @@
+---
+# ==============================================================================
+# Playbook: server_setup.yml
+# Project: ResQGrid — Real-Time Disaster Alert & Response Platform
+# Purpose: Baseline configuration, safety audits, and service verification
+# ==============================================================================
+
+- name: Configure and Verify ResQGrid Server Environment
+  hosts: app_servers
+  gather_facts: true
+  vars_files:
+    - ../group_vars/all.yml
+  roles:
+    - role: common
+    - role: docker
+    - role: verification

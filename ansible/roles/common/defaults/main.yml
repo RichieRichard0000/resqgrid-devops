@@ -1,0 +1,19 @@
+---
+# Defaults for role: common
+common_packages:
+  - curl
+  - wget
+  - git
+  - htop
+  - jq
+  - unzip
+  - ca-certificates
+  - apt-transport-https
+  - gnupg
+  - lsb-release
+  - build-essential
+
+common_apt_cache_valid_time: 3600
+common_target_os: "Ubuntu"
+common_target_os_version: "22.04"
+

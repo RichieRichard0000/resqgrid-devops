@@ -1,0 +1,33 @@
+---
+# ==============================================================================
+# Tasks for role: common
+# ==============================================================================
+
+- name: "[Common] Verify operating system distribution and version"
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] == common_target_os
+      - ansible_facts['distribution_version'] is version(common_target_os_version, '>=')
+    fail_msg: "Target host must be {{ common_target_os }} {{ common_target_os_version }}+. Found {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}."
+    success_msg: "Host OS verified: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }} ({{ ansible_facts['distribution_release'] }})"
+
+- name: "[Common] Update apt package cache conditionally"
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: "{{ common_apt_cache_valid_time }}"
+  become: true
+
+- name: "[Common] Ensure baseline system utilities are installed"
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+  become: true
+
+- name: "[Common] Verify application workspace directory exists with correct ownership"
+  ansible.builtin.file:
+    path: "{{ app_workspace_dir }}"
+    state: directory
+    owner: "{{ app_workspace_owner }}"
+    group: "{{ app_workspace_group }}"
+    mode: '0755'
+  become: true
